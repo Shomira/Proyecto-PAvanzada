@@ -45,6 +45,31 @@ val dataMes = data.select("etnia", "grupo_ocupacion", "nivel_de_instruccion", "i
 val dataBla = data.select("etnia", "grupo_ocupacion", "nivel_de_instruccion", "ingreso_laboral", "rama_actividad", "sectorizacion","genero").where($"etnia" === "7 - Blanco")
 val dataOtr = data.select("etnia", "grupo_ocupacion", "nivel_de_instruccion", "ingreso_laboral", "rama_actividad", "sectorizacion","genero").where($"etnia" === "8 - Otro")
 
+// COMMAND ----------
+
+// DBTITLE 1, Promedio del Ingreso Laboral de acuerdo a la Etnia 
+
+dataInd.select(avg("ingreso_laboral").as("Ingreso Promedio Indígena")).show
+dataAfr.select(avg("ingreso_laboral").as("Ingreso Promedio Afroecuatoriano")).show
+dataNeg.select(avg("ingreso_laboral").as("Ingreso Promedio Negro")).show
+dataMul.select(avg("ingreso_laboral").as("Ingreso Promedio Mulato")).show
+dataMon.select(avg("ingreso_laboral").as("Ingreso Promedio Montubio")).show
+dataMes.select(avg("ingreso_laboral").as("Ingreso Promedio Mestizo")).show
+dataBla.select(avg("ingreso_laboral").as("Ingreso Promedio Blanco")).show
+dataOtr.select(avg("ingreso_laboral").as("Ingreso Promedio Otro")).show
+
+// COMMAND ----------
+
+// DBTITLE 1, Ingresos Laborales máximos y mínimos de cada etnia
+
+dataInd.select(max("ingreso_laboral").as("Indígena Max"), min("ingreso_laboral").as("Indígena Min")).show
+dataAfr.select(max("ingreso_laboral").as("Afroecuatoriano Max"), min("ingreso_laboral").as("Afroecuatoriano Min")).show
+dataNeg.select(max("ingreso_laboral").as("Negro Max"), min("ingreso_laboral").as("Negro Min")).show
+dataMul.select(max("ingreso_laboral").as("Mulato Max"), min("ingreso_laboral").as("Mulato Min")).show
+dataMon.select(max("ingreso_laboral").as("Montubio Max"), min("ingreso_laboral").as("Montubio Min")).show
+dataMes.select(max("ingreso_laboral").as("Mestizo Max"), min("ingreso_laboral").as("Mestizo Min")).show
+dataBla.select(max("ingreso_laboral").as("Blanco Max"), min("ingreso_laboral").as("Blanco Min")).show
+dataOtr.select(max("ingreso_laboral").as("Otro Max"), min("ingreso_laboral").as("Otro Min")).show
 
 // COMMAND ----------
 
@@ -68,7 +93,64 @@ println(f"${(dataMul.where($"ingreso_laboral".isNull).count / dataMul.count.toDo
 println(f"${(dataMon.where($"ingreso_laboral".isNull).count / dataMon.count.toDouble) * 100}%.2f%% Montubio")
 println(f"${(dataMes.where($"ingreso_laboral".isNull).count / dataMes.count.toDouble) * 100}%.2f%% Mestizo")
 println(f"${(dataBla.where($"ingreso_laboral".isNull).count / dataBla.count.toDouble) * 100}%.2f%% Blanco")
-println(f"${(dataOtr.where($"ingreso_laboral".isNull).count / dataOtr.count.toDouble) * 100}%.2f%% Otro")
+println(f"${(dataOtr.where($"ingreso_laboral".isNull).count / dataOtr.count.toDouble) * 100}%.2f%% Otro
+
+
+// COMMAND ----------
+
+// DBTITLE 1,¿Cuales son 5 Grupos de Ocupación de mas personas de cada Etnia?
+
+dataInd.groupBy($"grupo_ocupacion".as("Etnia Indigena - Grupo Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataAfr.groupBy($"grupo_ocupacion". as("Etnia Afroecuatoriano - Grupos Ocupación ") ).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataNeg.groupBy($"grupo_ocupacion". as("Etnia Negro - Grupos Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataMul.groupBy($"grupo_ocupacion". as("Etnia Mulato - Grupos Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataMon.groupBy($"grupo_ocupacion". as("Etnia Montubio - Grupos Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataMes.groupBy($"grupo_ocupacion". as("Etnia Mestizo - Grupos Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataBla.groupBy($"grupo_ocupacion". as("Etnia Blanco - Grupos Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+dataOtr.groupBy($"grupo_ocupacion". as("Etnia Otro - Grupos Ocupación ")).count.sort(desc("count")).show(numRows= 5, truncate = false)
+
+
+// COMMAND ----------
+
+// DBTITLE 1,¿Como están clasificadas las personas de cada Etnia según su sectorizacion  ?
+
+dataInd.groupBy($"sectorizacion".as ("Etnia Indigena - Sectorizacion")).count.sort(desc("count")).show(false)
+dataAfr.groupBy($"sectorizacion".as ("Etnia Afroecuatoriana - Sectorizacion") ).count.sort(desc("count")).show(false)
+dataNeg.groupBy($"sectorizacion".as ("Etnia Negro - Sectorizacion")).count.sort(desc("count")).show(false)
+dataMul.groupBy($"sectorizacion".as ("Etnia Mulato - Sectorizacion")).count.sort(desc("count")).show(false)
+dataMon.groupBy($"sectorizacion".as ("Etnia Montubio - Sectorizacion")).count.sort(desc("count")).show(false)
+dataMes.groupBy($"sectorizacion".as ("Etnia Mestizo - Sectorizacion")).count.sort(desc("count")).show(false)
+dataBla.groupBy($"sectorizacion".as ("Etnia Blanco - Sectorizacion")).count.sort(desc("count")).show(false)
+dataOtr.groupBy($"sectorizacion".as ("Otra - Sectorizacion")).count.sort(desc("count")).show(false)
+
+
+
+// COMMAND ----------
+
+// DBTITLE 1,¿Cuales son los 5 niveles de instrucción con mas personas de cada Etnia?
+
+dataInd.groupBy($"nivel_de_instruccion".as ("Etnia Indigena - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataAfr.groupBy($"nivel_de_instruccion".as ("Etnia Afroecuatoriano - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataNeg.groupBy($"nivel_de_instruccion".as ("Etnia Negro - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataMul.groupBy($"nivel_de_instruccion".as ("Etnia Mulato - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataMon.groupBy($"nivel_de_instruccion".as ("Etnia Montubio - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataMes.groupBy($"nivel_de_instruccion".as ("Etnia Mestizo - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataBla.groupBy($"nivel_de_instruccion".as ("Etnia Blanco - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+dataOtr.groupBy($"nivel_de_instruccion".as ("Etnia Otro - Niveles Instruccion")).count.orderBy(desc("count")).show(numRows = 5, truncate = false)
+
+// COMMAND ----------
+
+// DBTITLE 1, ¿Que porcentaje de personas que tienen un nivel de instrucción "Superior Universitario" ganan menos que el salario básico?
+
+val Indigenas = dataInd.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataInd.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100 
+val Afroecuatoriano  = dataAfr.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataAfr.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+val Negro = dataNeg.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataNeg.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+val Mulato = dataMul.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataMul.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+val Montubio = dataMon.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataMon.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+val Mestizo = dataMes.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataMes.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+val Blanco = dataBla.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataBla.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+val Otro = dataOtr.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).where($"ingreso_laboral" < "400").count / dataOtr.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).count.toDouble * 100
+
 
 // COMMAND ----------
 
