@@ -31,16 +31,65 @@ val myDataSchem = StructType(
 // COMMAND ----------
 
 // MAGIC %md
-// MAGIC ## Carga de Datos
+// MAGIC ## Carga de Datos(Data General)
 
 // COMMAND ----------
 
+// DBTITLE 0, Creación del DataFrame asignándole el esquema creado anteriormente
 val data = spark
     .read
     .schema(myDataSchem)
     .option("delimiter", "\t")
     .option("header","true")
     .csv("/FileStore/tables/Datos_ENEMDU_PEA_v2.csv")
+
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ## Carga de Datos(Provincias)
+
+// COMMAND ----------
+
+val dataProv = spark
+    .read
+    .option("delimiter", ";")
+    .option("header","true")
+    .option("inferSchema", "true")
+    .csv("/FileStore/tables/TABLAPROVINCIAS.csv")
+
+// COMMAND ----------
+
+// DBTITLE 1,Unión en base a las columnas en común(código de Provincia)
+val innerProvince = data.join(dataProv, data("provincia")=== dataProv("idprovincia"), "inner")
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ## Carga de Datos(Cantones)
+
+// COMMAND ----------
+
+ val dataCant = spark
+    .read
+    .option("delimiter", ",")
+    .option("header","true")
+    .option("inferSchema", "true")
+    .csv("/FileStore/tables/Cantones.csv")
+
+    // Cantones
+    dataCant.show(false)
+
+// COMMAND ----------
+
+// DBTITLE 1,Unión en base a las columnas en común(código de Cantón )
+// uso de la data que tienen los nombres de las provincias
+val dataProvCantones = innerProvince.join(dataCant, innerProvince("canton") === dataCant("codigoCanton"), "inner")
+
+// COMMAND ----------
+
+// DBTITLE 1,Eliminar las columnas que no se Usaran
+val dataProvCant = dataProvCantones.drop("provincia", "canton", "idProvincia", "codigoCanton")
 
 // COMMAND ----------
 
@@ -49,108 +98,140 @@ val data = spark
 
 // COMMAND ----------
 
-display(data.groupBy("etnia").count.sort(desc("count")))
+
+display(dataProvCant.groupBy("etnia").count.sort(desc("count")))
 
 // COMMAND ----------
 
-val dataInd = data.where($"etnia" === "1 - Indígena")
-val dataMon = data.where($"etnia" === "5 - Montubio")
-val dataMes = data.where($"etnia" === "6 - Mestizo")
-val dataBla = data.where($"etnia" === "7 - Blanco")
+// DBTITLE 0,Datas de acuerdo  a cada Etnia
+val dataInd = dataProvCant.where($"etnia" === "1 - Indígena")
+val dataMon = dataProvCant.where($"etnia" === "5 - Montubio")
+val dataMes = dataProvCant.where($"etnia" === "6 - Mestizo")
+val dataBla = dataProvCant.where($"etnia" === "7 - Blanco")
 
-val data4Etnias = data.where($"etnia" === "1 - Indígena" || $"etnia" === "5 - Montubio" || $"etnia" === "6 - Mestizo" || $"etnia" === "7 - Blanco") 
+val data4Etnias = dataProvCant.where($"etnia" === "1 - Indígena" || $"etnia" === "5 - Montubio" || $"etnia" === "6 - Mestizo" || $"etnia" === "7 - Blanco") 
 
-// COMMAND ----------
-
-// MAGIC %md
-// MAGIC ## Salarios máximos de cada etnia (Global)
-// MAGIC La etnia Mestizo se encuentra con el ingreso laboral más elevado de 146030 llevando una ventaja abismal en comparación a las demás; la etnia Blanco con 60000, que considerando que la población que participo en la encuesta de Indígena y Montubio es más elevada en comparación con etnia Blanco aun así el ingreso laboral es más bajo.
 
 // COMMAND ----------
 
-// DBTITLE 0,Salarios máximos de cada etnia (Global)
+// MAGIC  %md
+// MAGIC # Ingreso Laboral máximo de cada etnia (Global)
+// MAGIC La etnia **Mestizo** se encuentra con el ingreso laboral más elevado de **146030** llevando una ventaja abismal en comparación a las demás;  
+// MAGIC la etnia **Blanco** con **60000**, que considerando  que la población que participo en la encuesta de Indígena y Montubio es más elevada en comparación con etnia Blanco aun así el ingreso laboral es más bajo.
+
+// COMMAND ----------
+
 display(data4Etnias.groupBy("etnia").agg(max("ingreso_laboral")as "Ingreso Laboral Maximo").sort("etnia"))
 
-// COMMAND ----------
-
-// MAGIC %md
-// MAGIC ## Salarios mínimos de cada etnia (Global)
-// MAGIC Aunque la tabla no muestra datos tan relevantes es muy importante tomar en cuenta que hay personas que en el campo Ingreso Laboral consta la cantidad cero. Mas adelante tomaremos en cuenta estos datos para realizar un análisis más detallado.
 
 // COMMAND ----------
 
-// DBTITLE 0,Salarios mínimos de cada etnia (Global)
+// MAGIC  %md
+// MAGIC # Ingreso Laboral  mínimo de cada etnia (Global)
+// MAGIC Aunque la tabla no muestra datos tan relevantes es muy importante tomar en cuenta que hay personas que en el campo Ingreso Laboral consta la cantidad cero.  
+// MAGIC Mas adelante tomaremos en cuenta estos datos para realizar un análisis más detallado.
+
+// COMMAND ----------
+
 display(data4Etnias.groupBy("etnia").agg(min("ingreso_laboral")as "Ingreso Laboral Minimo").sort("etnia"))
 
+
+
 // COMMAND ----------
 
-// DBTITLE 1,Salarios máximos de cada etnia (Por año)
+// DBTITLE 1,Ingreso Laboral máximo de cada etnia (Por año)
 display(data4Etnias.groupBy("anio").pivot("etnia").max("ingreso_laboral").sort("anio"))
 
+
 // COMMAND ----------
 
-// DBTITLE 1,Salarios mínimos de cada etnia (Por años)
+// DBTITLE 1,Ingreso laboral mínimo de cada etnia (Por año)
 display(data4Etnias.groupBy("anio").pivot("etnia").min("ingreso_laboral").sort("anio"))
 
+
 // COMMAND ----------
 
-// DBTITLE 1,Salario promedio de cada etnia (Global)
+// DBTITLE 1,Ingreso Laboral promedio de cada etnia (Global)
 display(data4Etnias.groupBy("etnia").agg(round(avg("ingreso_laboral"))as "Ingreso Laboral Promedio").sort("etnia"))
 
-// COMMAND ----------
-
-// DBTITLE 1,Salario promedio de cada etnia (Por año)
-display(data4Etnias.groupBy("anio").pivot("etnia").agg(round(avg("ingreso_laboral"))).sort("anio"))
 
 // COMMAND ----------
 
-// DBTITLE 1,Porcentaje donde Ingreso Laboral sea menor al salario básico, de acuerdo a cada Etnia
-display(data4Etnias.groupBy($"ingreso_laboral" < 400 as "Ingreso laboral Menor que el Básico").pivot("etnia").count)
+// DBTITLE 1,Ingres Laboral promedio de cada etnia (Por año)
+display(data4Etnias.groupBy("anio").pivot("etnia").agg(avg("ingreso_laboral")).sort("anio"))
 
 // COMMAND ----------
 
 // DBTITLE 1,Porcentaje donde el campo Ingreso Laboral es Nulo, de acuerdo a cada Etnia
 display(data4Etnias.groupBy($"ingreso_laboral".isNull as "Ingreso Laboral nulo").pivot("etnia").count)
 
+
+// COMMAND ----------
+
+// DBTITLE 1,Porcentaje donde Ingreso Laboral sea menor al salario básico, de acuerdo a cada Etnia
+display(data4Etnias.groupBy($"ingreso_laboral" < 400 as "Ingreso laboral Menor que el Básico").pivot("etnia").count)
+
+
 // COMMAND ----------
 
 // DBTITLE 1,Distribución de los Grupos de Ocupación según cada Etnia
 display(data4Etnias.groupBy($"grupo_ocupacion").pivot("etnia").count.sort("grupo_ocupacion"))
 
+
+
 // COMMAND ----------
 
 // DBTITLE 1,Distribución de la Sectorización según cada Etnia
-display(data4Etnias.groupBy("sectorizacion").pivot("etnia").count.orderBy("sectorizacion"))
+display(data4Etnias.groupBy("sectorizacion").pivot("etnia").count.sort("sectorizacion"))
+
+
 
 // COMMAND ----------
 
 // DBTITLE 1,Distribución de los Niveles de Instrucción según cada Etnia
-display(data4Etnias.groupBy("nivel_de_instruccion").pivot("etnia").count.orderBy("nivel_de_instruccion"))
+
+display(data4Etnias.groupBy("nivel_de_instruccion").pivot("etnia").count.sort("nivel_de_instruccion"))
+
+
 
 // COMMAND ----------
 
-// DBTITLE 1,¿Que porcentaje de personas que tienen un nivel de instrucción "Superior Universitario" ganan menos que el salario básico?
+// DBTITLE 1, ¿Que porcentaje de personas que tienen un nivel de instrucción "Superior Universitario" ganan menos que el salario básico?
+
 display(data4Etnias.filter($"nivel_de_instruccion" === "09 - Superior Universitario" ).groupBy($"ingreso_laboral" < 400 as "Ingreso Laboral Menor que el Básico").pivot("etnia").count)
+
+
 
 // COMMAND ----------
 
 // DBTITLE 1,Distribución de las Ramas de Actividad según cada Etnia
 display(data4Etnias.groupBy($"rama_actividad").pivot($"etnia").count.sort("rama_actividad"))
 
+
 // COMMAND ----------
 
 // DBTITLE 1,Distribución de personas en cada rama de actividad de aquellos ubicados en el SECTOR INFORMAL según cada etnia
 display(data4Etnias.filter($"sectorizacion" === "2 - Sector Informal").groupBy($"rama_actividad").pivot($"etnia").count.sort("rama_actividad"))
 
-// COMMAND ----------
 
-// DBTITLE 1,Distribución de personas en cada rama de actividad que tengan un nivel de instrucción primaria según cada etnia
-display(data4Etnias.filter($"nivel_de_instruccion" === "04 - Primaria").groupBy($"rama_actividad").pivot($"etnia").count.orderBy("rama_actividad"))
 
 // COMMAND ----------
 
-// DBTITLE 1,Distribución de personas en cada rama de actividad que tengan un nivel de instrucción secundaria según cada etnia
-display(data4Etnias.filter($"nivel_de_instruccion" === "06 - Secundaria").groupBy($"rama_actividad").pivot($"etnia").count.orderBy("rama_actividad"))
+// DBTITLE 1,Distribución de personas en cada rama de actividad que tengan un nivel de instrucción PRIMARIA según cada etnia
+display(data4Etnias.filter($"nivel_de_instruccion" === "04 - Primaria").groupBy($"rama_actividad").pivot($"etnia").count.sort("rama_actividad"))
+
+
+
+// COMMAND ----------
+
+// DBTITLE 1,Distribución de personas en cada rama de actividad que tengan un nivel de instrucción SECUNDARIA según cada etnia
+display(data4Etnias.filter($"nivel_de_instruccion" === "06 - Secundaria").groupBy($"rama_actividad").pivot($"etnia").count.sort("rama_actividad"))
+
+
+// COMMAND ----------
+
+// DBTITLE 1,Numero de mujeres por cada año y por etnia que pertenecieron a la rama_actividad  Agricultura, ganadería caza y silvicultura y pesca
+display(data4Etnias.filter($"rama_actividad" === "01 - A. Agricultura, ganadería caza y silvicultura y pesca" && $"genero" === "2 - Mujer").groupBy($"anio").pivot($"etnia").count.sort("anio"))
 
 // COMMAND ----------
 
@@ -196,6 +277,7 @@ val superiorSBla = avgSBla + 3 * stdDesvSBla
 
 val datadataOutliersIngreso = data4Etnias.where(($"etnia" === "1 - Indígena" && $"ingreso_laboral" > superiorS) || ($"etnia" === "5 - Montubio" && $"ingreso_laboral" > superiorSMon) || ($"etnia" === "6 - Mestizo" && $"ingreso_laboral" > superiorSMes) || ($"etnia" === "7 - Blanco" && $"ingreso_laboral" > superiorSBla))
 
+
 // COMMAND ----------
 
 // MAGIC %md
@@ -233,4 +315,6 @@ val superiorEBla = avgEBla + 3 * stdDesvEBla
 
 // COMMAND ----------
 
+
 val datadataOutliersEdad = data4Etnias.where(($"etnia" === "1 - Indígena" && $"edad" > superiorE) || ($"etnia" === "5 - Montubio" && $"edad" > superiorEMon) || ($"etnia" === "6 - Mestizo" && $"edad" > superiorEMes) || ($"etnia" === "7 - Blanco" && $"edad" > superiorEBla))
+
