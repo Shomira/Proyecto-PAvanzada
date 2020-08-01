@@ -277,6 +277,25 @@ val superiorSBla = avgSBla + 3 * stdDesvSBla
 
 val datadataOutliersIngreso = data4Etnias.where(($"etnia" === "1 - Indígena" && $"ingreso_laboral" > superiorS) || ($"etnia" === "5 - Montubio" && $"ingreso_laboral" > superiorSMon) || ($"etnia" === "6 - Mestizo" && $"ingreso_laboral" > superiorSMes) || ($"etnia" === "7 - Blanco" && $"ingreso_laboral" > superiorSBla))
 
+// COMMAND ----------
+
+// DBTITLE 1,Ingresos Laborales mínimos de los outliers de cada etnia 
+display(datadataOutliersIngreso.groupBy("etnia").agg(min("ingreso_laboral")as "Ingreso Laboral Minimo").sort("etnia"))
+
+// COMMAND ----------
+
+// DBTITLE 1,Distribución según el grupo ocupación de cada etnia (Outliers Ingreso laboral)
+display(datadataOutliersIngreso.groupBy($"grupo_ocupacion").pivot("etnia").count.sort("grupo_ocupacion"))
+
+// COMMAND ----------
+
+// DBTITLE 1,Distribución según el nivel de instrucción de cada etnia (Outliers Ingreso laboral)
+display(datadataOutliersIngreso.groupBy($"nivel_de_instruccion").pivot("etnia").count.sort("nivel_de_instruccion"))
+
+// COMMAND ----------
+
+// DBTITLE 1,Distribución según la provincia de cada etnia (Outliers Ingreso laboral)
+display(datadataOutliersIngreso.groupBy($"nomProvincia").pivot("etnia").count.sort("nomProvincia"))
 
 // COMMAND ----------
 
