@@ -61,8 +61,8 @@ val dataProv = spark
 // COMMAND ----------
 
 // DBTITLE 1,Unión en base a las columnas en común(código de Provincia)
-val innerProvince = data.join(dataProv, data("provincia")=== dataProv("idprovincia"), "inner")
-
+// Spark no soporta columnas del mismo nombre y las elimina 
+val innerProvince = data.join(dataProv, "provincia")
 // COMMAND ----------
 
 // MAGIC %md
@@ -89,7 +89,7 @@ val dataProvCantones = innerProvince.join(dataCant, innerProvince("canton") === 
 // COMMAND ----------
 
 // DBTITLE 1,Eliminar las columnas que no se Usaran
-val dataProvCant = dataProvCantones.drop("provincia", "canton", "idProvincia", "codigoCanton")
+val dataProvCant = dataProvCantones.drop("canton", "codigoCanton")
 
 // COMMAND ----------
 
@@ -334,6 +334,19 @@ val superiorEBla = avgEBla + 3 * stdDesvEBla
 
 // COMMAND ----------
 
-
 val datadataOutliersEdad = data4Etnias.where(($"etnia" === "1 - Indígena" && $"edad" > superiorE) || ($"etnia" === "5 - Montubio" && $"edad" > superiorEMon) || ($"etnia" === "6 - Mestizo" && $"edad" > superiorEMes) || ($"etnia" === "7 - Blanco" && $"edad" > superiorEBla))
 
+// COMMAND ----------
+
+// DBTITLE 1,Ingresos Laborales mínimo de los outliers de cada etnia 
+display(datadataOutliersEdad.groupBy("etnia").agg(min("edad")as "Edad Mínima").sort("etnia"))
+
+// COMMAND ----------
+
+// DBTITLE 1,Ingresos Laborales promedio de los outliers de cada etnia 
+display(datadataOutliersEdad.groupBy("etnia").agg(avg("ingreso_laboral")as "Ingreso Laboral Promedio").sort("etnia"))
+
+// COMMAND ----------
+
+// DBTITLE 1,Distribución según el nivel de instrucción de cada etnia (Outliers Edad)
+display(datadataOutliersEdad.groupBy($"nivel_de_instruccion").pivot("etnia").count.sort("nivel_de_instruccion"))
