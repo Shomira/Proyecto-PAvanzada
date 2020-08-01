@@ -174,6 +174,13 @@ display(data4Etnias.groupBy($"ingreso_laboral" < 400 as "Ingreso laboral Menor q
 
 // COMMAND ----------
 
+// DBTITLE 1,Sector en el que se ubican las personas que tienen un ingreso laboral de 0
+
+display(data4Etnias.filter($"ingreso_laboral" ===0).groupBy("sectorizacion").pivot("etnia").count.sort("sectorizacion"))
+
+
+// COMMAND ----------
+
 // DBTITLE 1,Distribución de los Grupos de Ocupación según cada Etnia
 display(data4Etnias.groupBy($"grupo_ocupacion").pivot("etnia").count.sort("grupo_ocupacion"))
 
@@ -338,7 +345,7 @@ val datadataOutliersEdad = data4Etnias.where(($"etnia" === "1 - Indígena" && $"
 
 // COMMAND ----------
 
-// DBTITLE 1,Ingresos Laborales mínimo de los outliers de cada etnia 
+// DBTITLE 1,Edad mínima de los outliers de cada etnia  
 display(datadataOutliersEdad.groupBy("etnia").agg(min("edad")as "Edad Mínima").sort("etnia"))
 
 // COMMAND ----------
