@@ -78,8 +78,8 @@ val dataCant = spark
 // COMMAND ----------
 
 val innerProvince = data.join(dataProv, "provincia")
-val dataProvCantones = innerProvince.join(dataCant, innerProvince("canton") === dataCant("codigoCanton"), "inner")
-val dataProvCant = dataProvCantones.drop("canton", "codigoCanton")
+val dataProvCantones = innerProvince.join(dataCant, innerProvince("canton") === dataCant("codigoCanton"))
+val dataProvCant = dataProvCantones.drop("provincia", "canton", "codigoCanton")
 
 // COMMAND ----------
 
@@ -113,7 +113,6 @@ val data4Etnias = dataProvCant.where($"etnia" === "1 - Indígena" || $"etnia" ==
 
 // COMMAND ----------
 
-// DBTITLE 0,Salarios máximos de cada etnia (Global)
 display(data4Etnias.groupBy("etnia").agg(max("ingreso_laboral")as "Ingreso Laboral Maximo").sort("etnia"))
 
 // COMMAND ----------
@@ -124,7 +123,6 @@ display(data4Etnias.groupBy("etnia").agg(max("ingreso_laboral")as "Ingreso Labor
 
 // COMMAND ----------
 
-// DBTITLE 0,Salarios mínimos de cada etnia (Global)
 display(data4Etnias.groupBy("etnia").agg(min("ingreso_laboral")as "Ingreso Laboral Minimo").sort("etnia"))
 
 // COMMAND ----------
@@ -136,15 +134,6 @@ display(data4Etnias.groupBy("etnia").agg(min("ingreso_laboral")as "Ingreso Labor
 // COMMAND ----------
 
 display(data4Etnias.groupBy("anio").pivot("etnia").max("ingreso_laboral").sort("anio"))
-
-// COMMAND ----------
-
-// MAGIC %md
-// MAGIC ## Ingreso laboral mínimo de cada etnia (Por años)
-
-// COMMAND ----------
-
-display(data4Etnias.groupBy("anio").pivot("etnia").min("ingreso_laboral").sort("anio"))
 
 // COMMAND ----------
 
@@ -221,7 +210,7 @@ display(data4Etnias.groupBy("sectorizacion").pivot("etnia").count.sort("sectoriz
 
 // MAGIC %md
 // MAGIC ## Distribución de los Niveles de Instrucción según cada Etnia
-// MAGIC En el nivel de instrucción PRIMARIA es donde se ubica la mayor parte de población de cada una de las 4 etnias analizadas. De estas etnias resalta sobretodo la etnia Montubio, en la cual casi la mitad de su poblacion total está ubicado en este nivel; siendo más del doble que aquellos ubicados en el segundo nivel mas frecuente (Secundaria)
+// MAGIC En el nivel de instrucción PRIMARIA es donde se ubica la mayor parte de población de cada una de las 4 etnias analizadas. De estas etnias resalta sobretodo la  **Montubio**, en la cual casi la mitad de su poblacion total está ubicado en este nivel; siendo más del doble que aquellos ubicados en el segundo nivel mas frecuente (Secundaria)
 
 // COMMAND ----------
 
@@ -441,3 +430,54 @@ display(dataOutliersEdad.groupBy("etnia").agg(avg("ingreso_laboral")as "Ingreso 
 // COMMAND ----------
 
 display(dataOutliersEdad.groupBy($"nivel_de_instruccion").pivot("etnia").count.sort("nivel_de_instruccion"))
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ## SQL
+// MAGIC Creación de nuestra tabla dinámica
+
+// COMMAND ----------
+
+dataProvCant.createOrReplaceTempView("EDU_TABLE")
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ### Nombres de cada provincias junto a: el número de etnias que están presentes en esa provincia, el promedio del ingreso laboral anual de todos los registrados en dicha provincia y el número de registros que existen en ésta
+
+// COMMAND ----------
+
+// MAGIC %sql
+// MAGIC Select nomProvincia, count(DISTINCT etnia) , avg(ingreso_laboral * 12) , count(*)
+// MAGIC From EDU_TABLE
+// MAGIC GROUP BY nomProvincia
+// MAGIC ORDER BY 4;
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ### Nombre y cantidad de registros de cada provincia que tengan un ingreso laboral mayor a 20000 y se encuentren en el grupo de Profesionales científicos e intelectuales
+
+// COMMAND ----------
+
+// MAGIC %sql
+// MAGIC Select nomProvincia, count(*)
+// MAGIC From EDU_TABLE
+// MAGIC WHERE ingreso_laboral > 20000 AND grupo_ocupacion == "02 - Profesionales científicos e intelectuales"
+// MAGIC GROUP BY nomProvincia
+// MAGIC ORDER BY count(*);
+
+// COMMAND ----------
+
+// MAGIC %md
+// MAGIC ### Grupo de ocupación y cantidad de registros de aquellos que se encuentran en las provincias de Pichincha o Guayas, con un nivel de instrucción de Post-grado y con un ingreso laboral mayor a 10000
+
+// COMMAND ----------
+
+// MAGIC %sql
+// MAGIC Select grupo_ocupacion, count(*)
+// MAGIC From EDU_TABLE
+// MAGIC WHERE (nomProvincia == "PICHINCHA" OR nomProvincia == "GUAYAS") AND nivel_de_instruccion == "10 - Post-grado" AND ingreso_laboral > 10000
+// MAGIC GROUP BY grupo_ocupacion
+// MAGIC ORDER BY count(*); 
